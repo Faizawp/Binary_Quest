@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Number Converter Quest 2.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        dark: '#0f172a',
+                        darker: '#020617',
+                        card: '#1e293b',
+                        bin: '#3b82f6', // Blue for Binary
+                        dec: '#22c55e', // Green for Decimal
+                        hex: '#a855f7', // Purple for Hex
+                        warning: '#eab308',
+                        byte: '#0ea5e9'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            background-color: #020617;
+            color: #f8fafc;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        
+        .neon-text { text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        
+        /* Floating Animation */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        
+        /* Pulse border */
+        @keyframes pulse-border {
+            0% { border-color: rgba(59, 130, 246, 0.5); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+            70% { border-color: rgba(59, 130, 246, 1); box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { border-color: rgba(59, 130, 246, 0.5); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+        .pulse-active { animation: pulse-border 2s infinite; }
+
+        /* Boss shake */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        .shake { animation: shake 0.5s; }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col md:flex-row bg-darker overflow-hidden font-sans">
+    
+    <main id="app-container" class="flex-1 h-full relative flex flex-col max-w-md mx-auto w-full border-x border-slate-800 bg-dark shadow-2xl overflow-hidden z-10">
+        
+        <!-- Top Bar -->
+        <header id="topbar" class="h-14 flex items-center justify-between px-4 bg-card border-b border-slate-700 z-20 hidden">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-600 flex items-center justify-center text-sm font-bold text-byte" id="header-avatar">?</div>
+                <div>
+                    <div class="text-xs font-bold leading-tight" id="header-name">Player</div>
+                    <div class="text-[10px] text-gray-400 font-mono" id="header-xp">0 XP</div>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="app.navigate('dashboard')" class="w-8 h-8 rounded bg-slate-800 text-gray-300 flex items-center justify-center hover:text-white transition"><i class="fa-solid fa-chart-pie"></i></button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <div id="view-container" class="flex-1 overflow-hidden relative">
+            <!-- Templates will be injected here -->
+        </div>
+
+        <nav id="bottom-nav" class="h-16 bg-card border-t border-slate-700 flex items-center justify-around z-20 hidden pb-safe">
+            <button onclick="app.navigate('home')" class="nav-btn w-12 h-12 flex flex-col items-center justify-center text-gray-500 hover:text-white transition group" data-target="home">
+                <i class="fa-solid fa-house text-lg group-[.active]:text-byte group-[.active]:scale-110 transition"></i>
+                <span class="text-[9px] mt-1 group-[.active]:text-white font-bold">Home</span>
+            </button>
+            <button onclick="app.navigate('learn')" class="nav-btn w-12 h-12 flex flex-col items-center justify-center text-gray-500 hover:text-white transition group" data-target="learn">
+                <i class="fa-solid fa-book text-lg group-[.active]:text-dec group-[.active]:scale-110 transition"></i>
+                <span class="text-[9px] mt-1 group-[.active]:text-white font-bold">Learn</span>
+            </button>
+            <button onclick="app.navigate('lab')" class="nav-btn w-12 h-12 flex flex-col items-center justify-center text-gray-500 hover:text-white transition group" data-target="lab">
+                <i class="fa-solid fa-flask text-lg group-[.active]:text-warning group-[.active]:scale-110 transition"></i>
+                <span class="text-[9px] mt-1 group-[.active]:text-white font-bold">Lab</span>
+            </button>
+            <button onclick="app.navigate('quest')" class="nav-btn w-12 h-12 flex flex-col items-center justify-center text-gray-500 hover:text-white transition group" data-target="quest">
+                <div class="relative">
+                    <i class="fa-solid fa-gamepad text-lg group-[.active]:text-hex group-[.active]:scale-110 transition"></i>
+                    <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+                </div>
+                <span class="text-[9px] mt-1 group-[.active]:text-white font-bold">Quest</span>
+            </button>
+        </nav>
+    </main>
+
+    <!-- Custom General Modal -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex-col items-center justify-center p-4">
+        <div id="modal-box" class="bg-card border border-slate-700 w-full max-w-sm rounded-2xl p-6 shadow-2xl transform scale-90 transition-transform duration-300">
+            <h3 id="modal-title" class="text-xl font-black mb-2 text-white">Title</h3>
+            <div id="modal-body" class="text-sm text-gray-300 mb-6">Content</div>
+            <div class="flex gap-3 justify-end w-full" id="modal-actions">
+                <button onclick="ui.closeModal()" class="px-4 py-2 bg-slate-700 rounded-lg text-sm font-bold hover:bg-slate-600 w-full">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BYTE Tutor Chat Modal -->
+    <div id="byte-overlay" class="fixed inset-0 bg-black/70 z-[60] hidden flex-col items-center justify-end p-4 sm:justify-center backdrop-blur-sm">
+        <div class="w-full max-w-md bg-dark border-2 border-byte rounded-3xl p-1 relative shadow-[0_0_30px_rgba(14,165,233,0.2)] animate-float mb-4">
+            <div class="absolute -top-12 left-1/2 transform -translate-x-1/2 w-24 h-24 bg-dark rounded-full border-4 border-byte flex items-center justify-center z-10 shadow-[0_0_20px_rgba(14,165,233,0.5)]">
+                <div class="text-5xl">🤖</div>
+            </div>
+            <div class="bg-card rounded-[26px] p-6 pt-14 text-center">
+                <h4 class="text-byte font-black text-xl mb-2 tracking-wide">BYTE TUTOR</h4>
+                <div id="byte-message" class="text-sm text-gray-200 mb-6 min-h-[60px] font-sans leading-relaxed">Pesan dari BYTE</div>
+                <div id="byte-actions" class="flex flex-col gap-2">
+                    <button onclick="ui.closeByte()" class="w-full py-3 bg-byte text-dark font-black rounded-xl hover:bg-sky-400 transition">Mengerti!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TEMPLATES -->
+    
+    <!-- 1. Onboarding -->
+    <template id="tpl-onboarding">
+        <div class="h-full flex flex-col items-center justify-center p-6 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] relative">
+            <div class="absolute inset-0 bg-gradient-to-b from-darker/50 to-darker z-0"></div>
+            <div class="z-10 w-full max-w-sm text-center">
+                <div class="w-24 h-24 bg-card rounded-full mx-auto mb-6 flex items-center justify-center border-4 border-slate-700 shadow-xl animate-float">
+                    <i class="fa-solid fa-bolt text-4xl text-warning"></i>
+                </div>
+                <h1 class="text-3xl font-black mb-1 neon-text bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-green-400 to-purple-400">CORE-X QUEST</h1>
+                <p class="text-xs text-gray-400 mb-8 font-mono">Platform Pembelajaran Konversi Bilangan</p>
+                
+                <div class="bg-card p-6 rounded-2xl border border-slate-700 shadow-xl text-left">
+                    <h2 class="text-lg font-bold mb-4">Registrasi Agen</h2>
+                    <div class="mb-4">
+                        <label class="block text-[10px] text-gray-400 font-bold mb-1 uppercase tracking-wider">Nama Agen</label>
+                        <input type="text" id="reg-name" placeholder="Contoh: Alex" class="w-full bg-dark border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-byte focus:ring-1 focus:ring-byte transition">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-[10px] text-gray-400 font-bold mb-1 uppercase tracking-wider">Kelas</label>
+                        <select id="reg-class" class="w-full bg-dark border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-byte transition appearance-none">
+                            <option value="">Pilih Kelas</option>
+                            <option value="7">Kelas 7</option>
+                            <option value="8">Kelas 8</option>
+                            <option value="9">Kelas 9</option>
+                            <option value="other">Lainnya</option>
+                        </select>
+                    </div>
+                    <button onclick="app.completeOnboarding()" class="w-full bg-byte text-dark font-black py-4 rounded-xl hover:bg-sky-400 transition flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(14,165,233,0.4)]">
+                        MULAI MISI <i class="fa-solid fa-rocket"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 2. Home -->
+    <template id="tpl-home">
+        <div class="p-5 h-full overflow-y-auto pb-24 relative">
+            <!-- Hero -->
+            <div class="bg-gradient-to-br from-card to-darker rounded-3xl p-6 border border-slate-700 relative overflow-hidden mb-6 shadow-xl">
+                <div class="absolute -right-4 -bottom-4 text-8xl opacity-10"><i class="fa-solid fa-microchip"></i></div>
+                <h2 class="text-2xl font-black mb-1">Status Sistem</h2>
+                <div class="text-xs text-warning font-mono mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-warning animate-ping"></span> CORE-X TERKUNCI
+                </div>
+                <p class="text-sm text-gray-300 mb-6 leading-relaxed relative z-10">Kuasai bahasa Biner, Desimal, dan Heksadesimal untuk memulihkan sistem utama.</p>
+                <div class="flex gap-2">
+                    <button onclick="app.navigate('quest')" class="flex-1 bg-byte text-dark font-black py-3 rounded-xl shadow-[0_0_15px_rgba(14,165,233,0.3)] hover:bg-sky-400 transition transform active:scale-95">LANJUTKAN MISI</button>
+                </div>
+            </div>
+
+            <!-- Dashboard Grid -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div onclick="app.navigate('learn')" class="bg-card p-4 rounded-2xl border border-slate-700 hover:border-dec cursor-pointer transition flex flex-col items-center justify-center text-center gap-2 group">
+                    <div class="w-12 h-12 rounded-full bg-darker flex items-center justify-center group-hover:scale-110 transition"><i class="fa-solid fa-book text-2xl text-dec drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]"></i></div>
+                    <div>
+                        <div class="font-bold text-sm">Akademi</div>
+                        <div class="text-[9px] text-gray-500">6 Modul Belajar</div>
+                    </div>
+                </div>
+                <div onclick="app.navigate('lab')" class="bg-card p-4 rounded-2xl border border-slate-700 hover:border-warning cursor-pointer transition flex flex-col items-center justify-center text-center gap-2 group">
+                    <div class="w-12 h-12 rounded-full bg-darker flex items-center justify-center group-hover:scale-110 transition"><i class="fa-solid fa-flask text-2xl text-warning drop-shadow-[0_0_8px_rgba(234,179,8,0.4)]"></i></div>
+                    <div>
+                        <div class="font-bold text-sm">Lab Konversi</div>
+                        <div class="text-[9px] text-gray-500">Eksplorasi Angka</div>
+                    </div>
+                </div>
+                <div onclick="app.navigate('mistakes')" class="bg-card p-4 rounded-2xl border border-slate-700 hover:border-red-500 cursor-pointer transition flex flex-col items-center justify-center text-center gap-2 group">
+                    <div class="w-12 h-12 rounded-full bg-darker flex items-center justify-center group-hover:scale-110 transition"><i class="fa-solid fa-book-skull text-2xl text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]"></i></div>
+                    <div>
+                        <div class="font-bold text-sm">Buku Error</div>
+                        <div class="text-[9px] text-gray-500">Analisis Kesalahan</div>
+                    </div>
+                </div>
+                <div onclick="app.navigate('leaderboard')" class="bg-card p-4 rounded-2xl border border-slate-700 hover:border-byte cursor-pointer transition flex flex-col items-center justify-center text-center gap-2 group">
+                    <div class="w-12 h-12 rounded-full bg-darker flex items-center justify-center group-hover:scale-110 transition"><i class="fa-solid fa-trophy text-2xl text-byte drop-shadow-[0_0_8px_rgba(14,165,233,0.4)]"></i></div>
+                    <div>
+                        <div class="font-bold text-sm">Peringkat</div>
+                        <div class="text-[9px] text-gray-500">Leaderboard Global</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="bg-card rounded-2xl p-4 border border-slate-700">
+                <div class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Penguasaan (Mastery)</div>
+                <div class="space-y-3" id="home-mastery-list">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 3. Learn List -->
+    <template id="tpl-learn-list">
+        <div class="p-5 h-full overflow-y-auto pb-24">
+            <h2 class="text-xl font-black mb-1">Akademi Digital</h2>
+            <p class="text-xs text-gray-400 mb-6 font-mono">Pahami cara praktis konversi bilangan.</p>
+            <div class="space-y-4" id="learn-module-container">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </template>
+
+    <!-- 4. Learn Detail -->
+    <template id="tpl-learn-detail">
+        <div class="h-full flex flex-col bg-darker relative">
+            <div class="h-14 bg-card border-b border-slate-700 flex items-center px-4 sticky top-0 z-10">
+                <button onclick="app.navigate('learn')" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white mr-2 transition"><i class="fa-solid fa-arrow-left"></i></button>
+                <div class="font-bold text-sm truncate flex-1" id="learn-d-title">Title</div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-5 pb-24" id="learn-d-content">
+                <!-- Dynamic Content -->
+            </div>
+        </div>
+    </template>
+
+    <!-- 5. Lab -->
+    <template id="tpl-lab">
+        <div class="p-5 h-full flex flex-col pb-24 overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-black"><i class="fa-solid fa-flask text-warning mr-2"></i>Lab Konversi</h2>
+                <button onclick="app.showLabHelp()" class="w-8 h-8 rounded-full bg-slate-800 text-gray-400 hover:text-white transition"><i class="fa-solid fa-question"></i></button>
+            </div>
+            <p class="text-xs text-gray-400 mb-4 font-mono leading-relaxed">Ubah satu nilai, yang lain otomatis mengikuti. Gunakan untuk memeriksa pemahamanmu.</p>
+
+            <div class="space-y-4 flex-none">
+                <!-- BINARY -->
+                <div class="bg-card border-2 border-slate-700 focus-within:border-bin rounded-xl p-4 transition-colors relative overflow-hidden group">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-bin opacity-50 group-focus-within:opacity-100 transition"></div>
+                    <label class="text-xs font-bold text-bin mb-2 block uppercase tracking-wider pl-2"><i class="fa-solid fa-microchip mr-1"></i> Biner (Basis 2)</label>
+                    <input type="text" id="lab-bin" placeholder="Contoh: 1010" class="w-full bg-transparent text-2xl font-mono text-white focus:outline-none pl-2" oninput="lab.onInput('bin')" autocomplete="off">
+                </div>
+                <!-- DECIMAL -->
+                <div class="bg-card border-2 border-slate-700 focus-within:border-dec rounded-xl p-4 transition-colors relative overflow-hidden group">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-dec opacity-50 group-focus-within:opacity-100 transition"></div>
+                    <label class="text-xs font-bold text-dec mb-2 block uppercase tracking-wider pl-2"><i class="fa-solid fa-hashtag mr-1"></i> Desimal (Basis 10)</label>
+                    <input type="number" id="lab-dec" placeholder="Contoh: 42" class="w-full bg-transparent text-2xl font-mono text-white focus:outline-none pl-2" oninput="lab.onInput('dec')" autocomplete="off">
+                </div>
+                <!-- HEX -->
+                <div class="bg-card border-2 border-slate-700 focus-within:border-hex rounded-xl p-4 transition-colors relative overflow-hidden group">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-hex opacity-50 group-focus-within:opacity-100 transition"></div>
+                    <label class="text-xs font-bold text-hex mb-2 block uppercase tracking-wider pl-2"><i class="fa-solid fa-barcode mr-1"></i> Heksadesimal (Basis 16)</label>
+                    <input type="text" id="lab-hex" placeholder="Contoh: 2A" class="w-full bg-transparent text-2xl font-mono text-white focus:outline-none uppercase pl-2" oninput="lab.onInput('hex')" autocomplete="off">
+                </div>
+            </div>
+
+            <button onclick="lab.explain()" class="w-full mt-6 bg-slate-700 hover:bg-slate-600 text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-2 flex-none shadow-lg active:scale-95">
+                <i class="fa-solid fa-magnifying-glass text-warning"></i> Jelaskan Caranya (Step-by-Step)
+            </button>
+            
+            <div id="lab-explanation" class="mt-4 hidden flex-col gap-3 pb-8">
+                <!-- Explanation injected here -->
+            </div>
+        </div>
+    </template>
+
+    <!-- 6. Quest Map -->
+    <template id="tpl-quest-map">
+        <div class="h-full flex flex-col bg-darker relative">
+            <div class="p-5 border-b border-slate-700 bg-card z-10 flex justify-between items-center shadow-lg">
+                <div>
+                    <h2 class="text-xl font-black">Quest Map</h2>
+                    <p class="text-xs text-gray-400 font-mono">Level <span id="qm-current" class="text-byte font-bold">1</span> / 25</p>
+                </div>
+                <div class="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center border-2 border-byte shadow-[0_0_15px_rgba(14,165,233,0.4)]">
+                    <i class="fa-solid fa-robot text-byte text-xl animate-bounce" style="animation-duration: 2s;"></i>
+                </div>
+            </div>
+            <!-- Map Container -->
+            <div class="flex-1 overflow-y-auto p-6 relative pb-32" id="quest-map-container" style="scroll-behavior: smooth;">
+                <!-- Vertical Line -->
+                <div class="absolute left-1/2 transform -translate-x-1/2 top-10 bottom-10 w-1 bg-slate-700 z-0 rounded-full" id="qm-line"></div>
+                <!-- Nodes injected via JS -->
+                <div id="qm-nodes" class="relative z-10 flex flex-col gap-8 pb-10"></div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 7. Quest Play -->
+    <template id="tpl-quest-play">
+        <div class="h-full flex flex-col bg-darker">
+            <div class="h-14 bg-card border-b border-slate-700 flex items-center justify-between px-4 shrink-0">
+                <button onclick="app.navigate('quest')" class="text-gray-400 hover:text-white p-2 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <div class="text-sm font-bold font-mono tracking-widest" id="qp-level-title">LEVEL 1</div>
+                <button onclick="quest.reqHint()" class="text-warning hover:text-yellow-300 relative group p-2 transition"><i class="fa-solid fa-lightbulb text-lg"></i>
+                    <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-ping" id="qp-hint-badge"></span>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-5 pb-24 flex flex-col" id="qp-content">
+                <!-- Boss HP Bar (Hidden by default) -->
+                <div id="qp-boss-bar" class="hidden w-full mb-6 bg-card p-4 rounded-2xl border border-red-900 shadow-[0_0_20px_rgba(220,38,38,0.2)]">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-black text-red-500 tracking-wider"><i class="fa-solid fa-skull mr-2"></i>THE NUMBER GLITCH</span>
+                        <span class="text-xs font-mono font-bold text-red-400" id="qp-boss-hp-text">10/10 HP</span>
+                    </div>
+                    <div class="h-4 w-full bg-dark rounded-full overflow-hidden border border-red-900/50">
+                        <div id="qp-boss-hp-fill" class="h-full bg-gradient-to-r from-red-700 to-red-400 transition-all duration-300 relative" style="width: 100%;">
+                            <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagonal-stripes.png')] opacity-30"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-card p-6 rounded-2xl border border-slate-700 shadow-xl mb-6 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-green-500 to-purple-500"></div>
+                    <div class="text-xs text-gray-400 mb-4 font-mono leading-relaxed" id="qp-story">Story text here...</div>
+                    <div class="bg-dark p-4 rounded-xl border border-slate-600/50 flex items-center justify-center min-h-[100px]">
+                        <h3 class="text-xl font-bold font-mono text-white text-center leading-snug" id="qp-question">QUESTION</h3>
+                    </div>
+                </div>
+
+                <!-- Interaction Area -->
+                <div id="qp-interaction" class="flex-1 flex flex-col justify-end pb-4">
+                    <!-- Dynamic Answer Area -->
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 8. Mistakes Book -->
+    <template id="tpl-mistakes">
+        <div class="p-5 h-full overflow-y-auto pb-24">
+            <h2 class="text-xl font-black mb-1"><i class="fa-solid fa-book-skull text-red-500 mr-2"></i>Buku Kesalahan</h2>
+            <p class="text-xs text-gray-400 mb-6 font-mono leading-relaxed">Sistem mencatat algoritma yang gagal. Pelajari untuk meningkatkan Akurasi.</p>
+            
+            <div id="mistakes-list" class="space-y-4">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </template>
+
+    <!-- 9. Leaderboard -->
+    <template id="tpl-leaderboard">
+        <div class="p-5 pb-24 h-full overflow-y-auto flex flex-col">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-black"><i class="fa-solid fa-trophy text-warning mr-2"></i>Leaderboard</h2>
+                <select id="lb-filter" onchange="app.renderLeaderboard()" class="bg-dark border border-slate-600 rounded-lg px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-byte shadow-lg">
+                    <option value="all">Semua Kelas</option>
+                    <option value="7">Kelas 7</option>
+                    <option value="8">Kelas 8</option>
+                    <option value="9">Kelas 9</option>
+                </select>
+            </div>
+            
+            <!-- Top 3 Podium -->
+            <div class="flex justify-center items-end gap-2 mb-8 mt-2" id="lb-top3"></div>
+
+            <!-- List -->
+            <div class="space-y-3" id="lb-list"></div>
+        </div>
+    </template>
+
+    <!-- 10. Dashboard (Teacher/Stats) -->
+    <template id="tpl-dashboard">
+        <div class="p-5 h-full overflow-y-auto pb-24">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center">
+                    <button onclick="app.navigate('home')" class="mr-3 text-gray-400 hover:text-white p-2"><i class="fa-solid fa-arrow-left"></i></button>
+                    <h2 class="text-xl font-black">Statistik Profil</h2>
+                </div>
+            </div>
+            
+            <div class="bg-card p-6 rounded-2xl border border-slate-700 mb-6 shadow-xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-10"><i class="fa-solid fa-fingerprint text-6xl"></i></div>
+                <div class="text-center mb-6 relative z-10">
+                    <div class="w-20 h-20 bg-dark rounded-full mx-auto border-4 border-slate-600 flex items-center justify-center text-3xl font-black text-byte mb-3 shadow-lg" id="db-avatar">A</div>
+                    <div class="text-xl font-black text-white tracking-wide" id="db-name">Name</div>
+                    <div class="text-xs text-gray-400 font-mono mt-1 bg-slate-800 inline-block px-3 py-1 rounded-full border border-slate-600">Kelas <span id="db-class"></span></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 relative z-10">
+                    <div class="bg-dark p-4 rounded-xl border border-warning/30 text-center shadow-inner">
+                        <div class="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1">Total XP</div>
+                        <div class="text-2xl font-mono font-black text-warning" id="db-xp">0</div>
+                    </div>
+                    <div class="bg-dark p-4 rounded-xl border border-byte/30 text-center shadow-inner">
+                        <div class="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1">Level Max</div>
+                        <div class="text-2xl font-mono font-black text-byte" id="db-level">1</div>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="storage.reset()" class="w-full py-4 bg-red-900/20 text-red-500 border border-red-900/50 rounded-xl text-sm font-black hover:bg-red-900/40 transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-triangle-exclamation"></i> RESET DATA & PROGRESS
+            </button>
+        </div>
+    </template>
+
+    <script>
+        // --- 1. CORE DATA & STATE ---
+        const state = {
+            user: { name: '', class: '', xp: 0, level: 1, mastery: { bin2dec: 0, dec2bin: 0, bin2hex: 0, hex2bin: 0, dec2hex: 0, hex2dec: 0 }, completedModules: [] },
+            mistakes: [],
+            isOnboarded: false,
+            currentView: 'onboarding'
+        };
+
+        // INTEGRASI GOOGLE SHEETS (Ikuti panduan deployment untuk mendapatkan URL)
+        // Masukkan URL Web App dari Google Apps Script ke dalam tanda kutip di bawah ini.
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbycRinylTryMBecWxh4rlvumYTw_TC9VJaeuevo4TAxqB7hq6AXsjQ-b7qKsZ-DLiq5/exec"; 
+
+        const storage = {
+            save: () => {
+                // Simpan lokal
+                localStorage.setItem('numQuestData', JSON.stringify(state));
+                
+                // Sinkronisasi background ke Google Sheets (jika URL tersedia)
+                if(SCRIPT_URL && state.user.name && state.user.class) {
+                    fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: state.user.name,
+                            class: state.user.class,
+                            level: state.user.level,
+                            xp: state.user.xp
+                        })
+                    }).catch(e => console.log("Offline mode active"));
+                }
+            },
+            load: () => {
+                const data = localStorage.getItem('numQuestData');
+                if (data) Object.assign(state, JSON.parse(data));
+            },
+            reset: () => {
+                ui.showModal(
+                    '<i class="fa-solid fa-triangle-exclamation text-red-500 mr-2"></i> Peringatan Reset', 
+                    '<p class="text-sm text-gray-300 mb-4 leading-relaxed">Apakah kamu yakin ingin menghapus <b>SEMUA</b> progress, XP, dan Level? Data yang dihapus tidak bisa dikembalikan.</p>',
+                    `
+                    <div class="flex gap-3 w-full">
+                        <button onclick="ui.closeModal()" class="flex-1 py-3 bg-slate-700 rounded-xl text-sm font-bold text-white hover:bg-slate-600 transition">Batal</button>
+                        <button onclick="localStorage.removeItem('numQuestData'); location.reload();" class="flex-1 py-3 bg-red-600 rounded-xl text-sm font-bold text-white shadow-[0_0_15px_rgba(220,38,38,0.4)] hover:bg-red-500 transition">Ya, Hapus</button>
+                    </div>
+                    `
+                );
+            }
+        };
+
+        const MOCK_LEADERBOARD = [
+            { name: "Alex_Pro", class: "7", xp: 4500 },
+            { name: "Bima_Dev", class: "8", xp: 3200 },
+            { name: "Citra.X", class: "9", xp: 2800 },
+            { name: "Diana99", class: "7", xp: 2100 },
+            { name: "Eko_Bot", class: "8", xp: 1900 },
+            { name: "Fajar_Neo", class: "9", xp: 1500 },
+            { name: "Gita_Sys", class: "7", xp: 1200 }
+        ];
+
+        // --- STREAMING_CHUNK:Populating learning modules data ---
+        // --- 2. LEARN MODULES (CARA PRAKTIS) ---
+        const LEARN_MODULES = [
+            {
+                id: 'm1', title: '1. Pengenalan Bahasa Digital', color: 'byte', icon: 'fa-language',
+                content: `
+                    <p class="text-sm text-gray-300 mb-4">Komputer dan manusia menggunakan bahasa angka yang berbeda.</p>
+                    <div class="space-y-3 mb-6">
+                        <div class="bg-dark p-4 rounded-xl border border-dec relative overflow-hidden group">
+                            <div class="absolute inset-0 bg-dec/5 opacity-0 group-hover:opacity-100 transition"></div>
+                            <h3 class="font-bold text-dec mb-1"><i class="fa-solid fa-hashtag mr-2"></i>Desimal (Manusia)</h3>
+                            <p class="text-xs text-gray-400">Basis 10. Menggunakan 10 angka: <b>0,1,2,3,4,5,6,7,8,9</b>.</p>
+                        </div>
+                        <div class="bg-dark p-4 rounded-xl border border-bin relative overflow-hidden group">
+                            <div class="absolute inset-0 bg-bin/5 opacity-0 group-hover:opacity-100 transition"></div>
+                            <h3 class="font-bold text-bin mb-1"><i class="fa-solid fa-microchip mr-2"></i>Biner (Komputer)</h3>
+                            <p class="text-xs text-gray-400">Basis 2. Komputer hanya tahu On/Off. Menggunakan 2 angka: <b>0 dan 1</b>.</p>
+                        </div>
+                        <div class="bg-dark p-4 rounded-xl border border-hex relative overflow-hidden group">
+                            <div class="absolute inset-0 bg-hex/5 opacity-0 group-hover:opacity-100 transition"></div>
+                            <h3 class="font-bold text-hex mb-1"><i class="fa-solid fa-barcode mr-2"></i>Heksadesimal (Sistem)</h3>
+                            <p class="text-xs text-gray-400">Basis 16. Karena angka berhenti di 9, dilanjutkan huruf: <b>0-9, A, B, C, D, E, F</b>. (A=10, F=15)</p>
+                        </div>
+                    </div>
+                `,
+                quiz: { q: "Sistem bilangan apa yang menggunakan huruf A sampai F?", options: ["Desimal", "Biner", "Heksadesimal"], answer: 2, exp: "Heksadesimal menggunakan 16 simbol (0-9 dan A-F)." }
+            },
+            {
+                id: 'm2', title: '2. Biner ke Desimal (Tabel Ajaib)', color: 'bin', icon: 'fa-table-cells',
+                content: `
+                    <p class="text-sm text-gray-300 mb-4">Cara tercepat mengubah Biner ke Desimal adalah memakai <b>Tabel Kelipatan 2</b> (1, 2, 4, 8, 16...).</p>
+                    <div class="bg-card p-4 border border-slate-700 rounded-xl mb-4 relative">
+                        <div class="absolute -top-3 right-4 bg-warning text-dark text-[10px] font-black px-2 py-1 rounded">TRIK CEPAT</div>
+                        <p class="text-xs mb-3 text-white">Tulis biner dari KANAN ke KIRI di bawah tabel. Jumlahkan angka tabel yang bawahnya angka <b class="text-bin text-sm">1</b>.</p>
+                        <div class="bg-dark p-3 rounded-lg border border-slate-600">
+                            <div class="flex justify-between font-mono text-center text-sm font-bold text-dec mb-1 border-b border-slate-700 pb-2">
+                                <div class="flex-1">8</div><div class="flex-1">4</div><div class="flex-1">2</div><div class="flex-1">1</div>
+                            </div>
+                            <div class="flex justify-between font-mono text-center text-lg text-bin pt-1">
+                                <div class="flex-1">1</div><div class="flex-1">0</div><div class="flex-1">1</div><div class="flex-1">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-dark p-3 rounded-lg text-sm font-mono border-l-4 border-dec mb-6 shadow-inner text-center">
+                        Ada angka 1 di bawah <span class="text-dec font-bold">8</span> dan <span class="text-dec font-bold">2</span>.<br>
+                        8 + 2 = <b class="text-xl text-white">10</b>
+                    </div>
+                `,
+                quiz: { q: "Berapa nilai desimal dari biner 0101?", options: ["4", "5", "6", "10"], answer: 1, exp: "Tabel: 8-4-2-1. Biner: 0-1-0-1. Angka 1 ada di posisi 4 dan 1. Maka 4+1 = 5." }
+            },
+            {
+                id: 'm3', title: '3. Desimal ke Biner (Ganjil-Genap)', color: 'dec', icon: 'fa-divide',
+                content: `
+                    <p class="text-sm text-gray-300 mb-4">Gunakan trik <b>Bagi 2 dan Cek Sisa</b>. Catat sisanya dari bawah ke atas!</p>
+                    <div class="bg-card p-4 border border-slate-700 rounded-xl mb-4 font-mono text-xs">
+                        <p class="mb-3 text-white font-sans font-bold text-sm">Ubah 13 ke Biner:</p>
+                        <ul class="space-y-3 bg-dark p-3 rounded-lg border border-slate-600">
+                            <li class="flex justify-between border-b border-slate-700/50 pb-1"><span>13 ÷ 2 = 6</span> <span class="text-bin font-bold bg-slate-800 px-2 rounded">sisa 1</span></li>
+                            <li class="flex justify-between border-b border-slate-700/50 pb-1"><span>6 ÷ 2 = 3</span> <span class="text-bin font-bold bg-slate-800 px-2 rounded">sisa 0</span></li>
+                            <li class="flex justify-between border-b border-slate-700/50 pb-1"><span>3 ÷ 2 = 1</span> <span class="text-bin font-bold bg-slate-800 px-2 rounded">sisa 1</span></li>
+                            <li class="flex justify-between"><span>1 ÷ 2 = 0</span> <span class="text-bin font-bold bg-slate-800 px-2 rounded">sisa 1</span></li>
+                        </ul>
+                    </div>
+                    <div class="bg-dark p-3 rounded-lg text-center text-sm mb-6 border-l-4 border-bin shadow-inner">
+                        Baca sisa dari <b>BAWAH ke ATAS</b>:<br>
+                        <b class="text-2xl font-mono text-bin tracking-widest mt-1 block">1101</b>
+                    </div>
+                `,
+                quiz: { q: "Apakah 10 dibagi 2 menyisakan 1 atau 0?", options: ["Sisa 1", "Sisa 0", "Tidak ada sisa sama sekali", "Error"], answer: 1, exp: "10 adalah genap. 10 ÷ 2 = 5, sisanya tepat 0." }
+            },
+            {
+                id: 'm4', title: '4. Biner ↔ Hex (Trik 4 Bit)', color: 'hex', icon: 'fa-scissors',
+                content: `
+                    <p class="text-sm text-gray-300 mb-4">Hex adalah "singkatan" biner. <b>1 digit Hex = 4 digit Biner</b>.</p>
+                    <div class="bg-card p-4 border border-slate-700 rounded-xl mb-4 text-xs">
+                        <p class="font-bold text-white mb-3 text-sm">Ubah 101101 ke Hex:</p>
+                        <div class="space-y-3">
+                            <div>
+                                <p class="text-gray-400 mb-1">1. Pecah 4 digit dari KANAN:</p>
+                                <div class="bg-dark p-2 rounded text-center text-lg font-mono text-bin tracking-widest border border-slate-600">
+                                    0010 <span class="text-slate-500 mx-2">|</span> 1101
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-gray-400 mb-1">2. Pakai Tabel 8-4-2-1 tiap blok:</p>
+                                <div class="flex gap-2">
+                                    <div class="flex-1 bg-dark p-2 rounded text-center border border-slate-600">0010 = <b class="text-dec">2</b></div>
+                                    <div class="flex-1 bg-dark p-2 rounded text-center border border-slate-600">1101 = 8+4+1 = 13 (<b class="text-hex">D</b>)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-dark p-3 rounded-lg text-center text-xl font-bold font-mono mb-6 border-l-4 border-hex shadow-inner text-hex">
+                        2D
+                    </div>
+                `,
+                quiz: { q: "Apa bentuk Hex dari Biner 1010?", options: ["8", "A", "B", "10"], answer: 1, exp: "1010 bernilai 8+2=10. Dalam Hex, 10 ditulis sebagai huruf A." }
+            },
+            {
+                id: 'm5', title: '5. Desimal ke Hex (Bagi 16)', color: 'hex', icon: 'fa-divide',
+                content: `
+                    <p class="text-sm text-gray-300 mb-4">Membagi angka besar dengan 16 agak sulit? Jangan khawatir, gunakan pembagian bersusun biasa dan catat sisanya!</p>
+                    <div class="bg-card p-4 border border-slate-700 rounded-xl mb-4 font-mono text-xs">
+                        <p class="font-bold text-white mb-2 font-sans text-sm">Ubah 45 (Desimal) ke Hex:</p>
+                        <ul class="space-y-3 bg-dark p-3 rounded-lg border border-slate-600">
+                            <li class="flex justify-between items-center border-b border-slate-700/50 pb-2">
+                                <span>45 ÷ 16 = <b class="text-white text-sm">2</b></span> 
+                                <span class="text-warning text-right">sisa 13 <br><span class="text-hex font-black text-sm">(Huruf D)</span></span>
+                            </li>
+                            <li class="flex justify-between items-center">
+                                <span>2 ÷ 16 = <b class="text-white text-sm">0</b></span> 
+                                <span class="text-warning text-right">sisa 2 <br><span class="text-hex font-black text-sm">(Angka 2)</span></span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-dark p-3 rounded-lg text-center text-sm mb-6 border-l-4 border-hex shadow-inner">
+                        Sama seperti biner, baca sisa dari BAWAH ke ATAS:<br>
+                        <b class="text-2xl font-mono text-hex tracking-widest mt-1 block">2D</b>
+                    </div>
+                `,
+                quiz: { q: "Jika sisa pembagian adalah 15, huruf apa yang ditulis?", options: ["E", "F", "G", "H"], answer: 1, exp: "Dalam Heksadesimal, A=10, B=11, C=12, D=13, E=14, F=15." }
+            },
+            {
+                id: 'm6', title: '6. Hex ke Desimal (Kali 16)', color: 'dec', icon: 'fa-calculator',
+                content: `
+                    <p class="text-sm text-gray-300 mb-4">Hex memakai kelipatan 16. Ingat saja dua nilai tempat pertama: Kanan <b>dikali 1</b>, Kiri <b>dikali 16</b>.</p>
+                    <div class="bg-card p-4 border border-slate-700 rounded-xl mb-4 text-xs">
+                        <p class="font-bold text-white mb-3 text-sm">Ubah 2B (Hex) ke Desimal:</p>
+                        <div class="grid grid-cols-2 gap-2 text-center font-mono">
+                            <div class="bg-dark p-2 rounded-xl border border-slate-600">
+                                <div class="text-[10px] text-gray-400 mb-1">Posisi Kiri (×16)</div>
+                                <div class="text-2xl font-black text-hex mb-1">2</div>
+                                <div class="text-xs text-dec">2 × 16 = <b>32</b></div>
+                            </div>
+                            <div class="bg-dark p-2 rounded-xl border border-slate-600">
+                                <div class="text-[10px] text-gray-400 mb-1">Posisi Kanan (×1)</div>
+                                <div class="text-2xl font-black text-hex mb-1">B <span class="text-sm text-gray-500">(11)</span></div>
+                                <div class="text-xs text-dec">11 × 1 = <b>11</b></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-dark p-3 rounded-lg text-center text-sm mb-6 border-l-4 border-dec shadow-inner">
+                        Jumlahkan hasilnya:<br>
+                        32 + 11 = <b class="text-2xl font-mono text-dec mt-1 block">43</b>
+                    </div>
+                `,
+                quiz: { q: "Berapa nilai Desimal dari Hex 1A?", options: ["10", "16", "26", "36"], answer: 2, exp: "Kiri (1×16) = 16. Kanan (A/10×1) = 10. Total 16+10 = 26." }
+            }
+        ];
+
+        // --- STREAMING_CHUNK:Generating quest levels data ---
+        // --- 3. QUEST LEVELS (25 Terstruktur) ---
+        const QUEST_LEVELS = [
+            { id: 1, type: "mcq", title: "Pemanasan Biner", text: "Berapa nilai desimal dari biner 0110?", options: ["4", "6", "8", "10"], ans: "6", hint: "Gunakan tabel 8-4-2-1. Ada angka 1 di posisi 4 dan 2." },
+            { id: 2, type: "input", title: "Desimal Dasar", text: "Ubah angka 9 (Desimal) menjadi Biner! (Ketik angkanya)", ans: "1001", hint: "9 = 8 + 1. Beri angka 1 pada posisi 8 dan 1 di tabel ajaib." },
+            { id: 3, type: "input", title: "Hitung Cepat", text: "Konversi Biner 1011 ke Desimal.", ans: "11", hint: "8 + 0 + 2 + 1 = ?" },
+            { id: 4, type: "error", title: "Cari Kesalahan", text: "Seorang agen mengonversi 14 desimal menjadi 1110 biner. Apakah ini BENAR atau SALAH?", options: ["BENAR", "SALAH"], ans: "BENAR", hint: "14 = 8 + 4 + 2. Tabel 8-4-2-1 menjadi 1-1-1-0." },
+            { id: 5, type: "mcq", title: "Gerbang Hex", text: "Dalam Heksadesimal, angka 15 ditulis dengan huruf apa?", options: ["D", "E", "F", "G"], ans: "F", hint: "Ingat urutan: A=10, B=11, C=12, D=13, E=14, F=15." },
+            
+            { id: 6, type: "mcq", title: "Trik 4 Bit", text: "Ubah Biner 1101 menjadi Hex!", options: ["B", "C", "D", "E"], ans: "D", hint: "1101 = 8+4+0+1 = 13. Huruf ke-13 adalah D." },
+            { id: 7, type: "input", title: "Sandi Rahasia", text: "Huruf A dalam Hex setara dengan desimal berapa?", ans: "10", hint: "Setelah angka 9, Hex menggunakan huruf A untuk angka 10." },
+            { id: 8, type: "mcq", title: "Konversi Mundur", text: "Ubah 16 Desimal menjadi Hex!", options: ["10", "16", "F", "1A"], ans: "10", hint: "16 dibagi 16 = 1, sisa 0. Gabungkan dari bawah ke atas." },
+            { id: 9, type: "input", title: "Biner Panjang", text: "Ubah biner 10101 ke desimal! (Gunakan tabel 16-8-4-2-1)", ans: "21", hint: "Ada angka 1 di posisi 16, 4, dan 1." },
+            { id: 10, type: "error", title: "Audit Sistem", text: "Pernyataan: Hex 1F sama dengan Desimal 31. BENAR atau SALAH?", options: ["BENAR", "SALAH"], ans: "BENAR", hint: "(1 × 16) + (15 × 1) = 16 + 15 = 31." },
+
+            { id: 11, type: "input", title: "Pembagian 2", text: "Ubah desimal 20 ke biner!", ans: "10100", hint: "20 dibagi 2 = 10(s0), 5(s0), 2(s1), 1(s0), 0(s1). Urutkan dari bawah." },
+            { id: 12, type: "mcq", title: "Hex ke Biner", text: "Ubah Hex '5' menjadi biner 4-bit!", options: ["0101", "1010", "1111", "0011"], ans: "0101", hint: "5 = 4 + 1. Jadi posisinya 0-1-0-1." },
+            { id: 13, type: "mcq", title: "Hex Ganda", text: "Ubah Hex 2A menjadi Desimal!", options: ["32", "42", "48", "52"], ans: "42", hint: "Posisi Kiri (2×16=32). Posisi Kanan (10×1=10). 32+10=?" },
+            { id: 14, type: "error", title: "Celah Keamanan", text: "Biner 11110000 diubah ke Hex. Hasilnya adalah F0. BENAR/SALAH?", options: ["BENAR", "SALAH"], ans: "BENAR", hint: "Pecah 4 bit: 1111 (F) dan 0000 (0)." },
+            { id: 15, type: "input", title: "Desimal Besar", text: "Ubah desimal 50 ke Hex! (Ingat bagi 16)", ans: "32", hint: "50 ÷ 16 = 3 (sisa 2). Gabungkan!" },
+
+            { id: 16, type: "input", title: "Hex ke Desimal", text: "Ubah Hex 100 ke Desimal!", ans: "256", hint: "Nilai tempat ke-3 adalah 16×16 = 256. 1 × 256 = 256." },
+            { id: 17, type: "mcq", title: "Biner ke Hex", text: "Biner 101110, pecah jadi 4 bit dan ubah ke Hex!", options: ["2E", "3C", "5A", "B2"], ans: "2E", hint: "Pecah dari kanan: 0010 (2) dan 1110 (14=E)." },
+            { id: 18, type: "input", title: "Desimal ke Biner", text: "Desimal 32 dalam biner adalah?", ans: "100000", hint: "32 tepat berada di tabel kelipatan 2 (32-16-8-4-2-1). Beri 1 di 32, sisanya 0." },
+            { id: 19, type: "error", title: "Kesalahan Fatal", text: "Konversi: Hex 'FF' = Desimal 200. BENAR/SALAH?", options: ["BENAR", "SALAH"], ans: "SALAH", hint: "FF = (15×16) + (15×1) = 240 + 15 = 255. Bukan 200!" },
+            { id: 20, type: "mcq", title: "Hex Tertinggi", text: "Apa bentuk desimal dari Hex FF?", options: ["255", "256", "128", "512"], ans: "255", hint: "Seperti penjelasan di level sebelumnya." },
+
+            { id: 21, type: "input", title: "Speed Run 1", text: "Ubah Biner 1100100 ke Desimal!", ans: "100", hint: "64 + 32 + 0 + 0 + 4 + 0 + 0" },
+            { id: 22, type: "input", title: "Speed Run 2", text: "Ubah Desimal 128 ke Hex!", ans: "80", hint: "128 ÷ 16 = 8 sisa 0." },
+            { id: 23, type: "error", title: "Audit Akhir", text: "Hex 'B' lebih besar nilainya daripada Desimal 12. BENAR/SALAH?", options: ["BENAR", "SALAH"], ans: "SALAH", hint: "B = 11. 11 lebih KECIL dari 12." },
+            { id: 24, type: "input", title: "Gerbang Bos", text: "Ubah Biner 10101010 ke Hex! (Pecah 4 bit)", ans: "AA", hint: "1010 = 10 = A. Jadi 1010 dan 1010 adalah..." },
+            
+            // Boss Level
+            { id: 25, type: "boss", title: "THE NUMBER GLITCH", text: "Kalahkan glitch dengan menjawab rentetan serangan konversi acak!", hp: 10 }
+        ];
+
+        // --- STREAMING_CHUNK:Implementing UI and routing logic ---
+        const ui = {
+            showModal: (title, htmlContent, actionsHtml) => {
+                document.getElementById('modal-title').innerHTML = title;
+                document.getElementById('modal-body').innerHTML = htmlContent;
+                if(actionsHtml) {
+                    document.getElementById('modal-actions').innerHTML = actionsHtml;
+                } else {
+                    document.getElementById('modal-actions').innerHTML = `<button onclick="ui.closeModal()" class="px-4 py-3 bg-slate-700 rounded-xl text-sm font-bold text-white hover:bg-slate-600 w-full transition">Tutup</button>`;
+                }
+                const overlay = document.getElementById('modal-overlay');
+                overlay.classList.remove('hidden');
+                overlay.classList.add('flex');
+            },
+            closeModal: () => {
+                const overlay = document.getElementById('modal-overlay');
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+            },
+            showByte: (message, actionsHtml) => {
+                document.getElementById('byte-message').innerHTML = message;
+                document.getElementById('byte-actions').innerHTML = actionsHtml || `<button onclick="ui.closeByte()" class="w-full py-3 bg-byte text-dark font-black rounded-xl hover:bg-sky-400 transition shadow-[0_0_15px_rgba(14,165,233,0.3)]">Mengerti!</button>`;
+                const overlay = document.getElementById('byte-overlay');
+                overlay.classList.remove('hidden');
+                overlay.classList.add('flex');
+            },
+            closeByte: () => {
+                const overlay = document.getElementById('byte-overlay');
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+            }
+        };
+
+        const app = {
+            init: () => {
+                storage.load();
+                if (!state.isOnboarded) {
+                    app.navigate('onboarding');
+                } else {
+                    app.navigate('home');
+                    app.updateHeader();
+                }
+            },
+            
+            navigate: (viewId) => {
+                state.currentView = viewId;
+                
+                // Toggle nav visibility
+                if(viewId === 'onboarding') {
+                    document.getElementById('topbar').classList.add('hidden');
+                    document.getElementById('bottom-nav').classList.add('hidden');
+                } else {
+                    document.getElementById('topbar').classList.remove('hidden');
+                    document.getElementById('bottom-nav').classList.remove('hidden');
+                }
+                
+                // Active Nav state
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    if(btn.dataset.target === viewId) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+                
+                app.renderView(viewId);
+            },
+            
+            updateHeader: () => {
+                if(state.user.name) {
+                    document.getElementById('header-name').innerText = state.user.name;
+                    document.getElementById('header-avatar').innerText = state.user.name.charAt(0).toUpperCase();
+                    document.getElementById('header-xp').innerText = `${state.user.xp} XP | Lvl ${state.user.level}`;
+                }
+            },
+
+            completeOnboarding: () => {
+                const name = document.getElementById('reg-name').value.trim();
+                const cls = document.getElementById('reg-class').value;
+                if (!name || !cls) {
+                    ui.showByte("Tunggu agen! Kamu harus mengisi <b class='text-white'>Nama</b> dan memilih <b class='text-white'>Kelas</b> sebelum memulai misi.");
+                    return;
+                }
+                state.user.name = name;
+                state.user.class = cls;
+                state.isOnboarded = true;
+                storage.save();
+                app.updateHeader();
+                
+                ui.showByte(`Selamat datang, <b class="text-white text-lg">Agen ${name}</b>!<br><br>Sistem utama CORE-X rusak. Misimu adalah mempelajari bahasa digital dan memulihkan sistem melalui menu <b class="text-warning">Quest</b>.`, 
+                `<button onclick="ui.closeByte(); app.navigate('home')" class="w-full py-4 bg-byte text-dark font-black rounded-xl shadow-[0_0_15px_rgba(14,165,233,0.5)] active:scale-95 transition">Mulai Petualangan <i class="fa-solid fa-rocket ml-1"></i></button>`);
+            },
+            
+            renderTemplate: (templateId) => {
+                const tpl = document.getElementById(templateId);
+                if(tpl) {
+                    document.getElementById('view-container').innerHTML = tpl.innerHTML;
+                }
+            },
+
+            // --- STREAMING_CHUNK: View Renderers ---
+            renderView: (view) => {
+                if(view === 'onboarding') app.renderTemplate('tpl-onboarding');
+                else if(view === 'home') {
+                    app.renderTemplate('tpl-home');
+                    app.updateHeader();
+                    const m = state.user.mastery;
+                    const getBar = (val, color) => `<div class="h-2.5 w-full bg-dark rounded-full overflow-hidden mt-1 border border-slate-700/50"><div class="h-full bg-${color} relative" style="width: ${Math.min(val, 100)}%"><div class="absolute inset-0 bg-white/20"></div></div></div>`;
+                    document.getElementById('home-mastery-list').innerHTML = `
+                        <div><div class="flex justify-between text-[10px] font-bold text-gray-300"><span>Biner ↔ Desimal</span><span>${m.bin2dec}%</span></div>${getBar(m.bin2dec, 'bin')}</div>
+                        <div><div class="flex justify-between text-[10px] font-bold text-gray-300"><span>Biner ↔ Hex</span><span>${m.bin2hex}%</span></div>${getBar(m.bin2hex, 'hex')}</div>
+                        <div><div class="flex justify-between text-[10px] font-bold text-gray-300"><span>Desimal ↔ Hex</span><span>${m.dec2hex}%</span></div>${getBar(m.dec2hex, 'dec')}</div>
+                    `;
+                }
+                else if(view === 'dashboard') {
+                    app.renderTemplate('tpl-dashboard');
+                    document.getElementById('db-name').innerText = state.user.name;
+                    document.getElementById('db-avatar').innerText = state.user.name.charAt(0).toUpperCase();
+                    document.getElementById('db-class').innerText = state.user.class === 'other' ? 'Lainnya' : state.user.class;
+                    document.getElementById('db-xp').innerText = state.user.xp;
+                    document.getElementById('db-level').innerText = state.user.level;
+                }
+                else if (view === 'learn') {
+                    app.renderTemplate('tpl-learn-list');
+                    const listHtml = LEARN_MODULES.map(m => `
+                        <div onclick="learnEngine.openModule('${m.id}')" class="bg-card p-4 rounded-2xl border ${state.user.completedModules.includes(m.id) ? 'border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.1)]' : 'border-slate-700 hover:border-slate-500'} cursor-pointer flex items-center gap-4 transition group active:scale-[0.98]">
+                            <div class="w-14 h-14 rounded-2xl bg-dark flex items-center justify-center text-${m.color} group-hover:scale-110 transition shadow-inner border border-slate-700">
+                                <i class="fa-solid ${m.icon} text-2xl"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-bold text-sm text-white">${m.title}</h3>
+                                <div class="text-[10px] text-gray-400 mt-1.5 font-bold tracking-wide">${state.user.completedModules.includes(m.id) ? '<span class="text-green-500 bg-green-900/30 px-2 py-0.5 rounded-full"><i class="fa-solid fa-check mr-1"></i> Selesai</span>' : 'Belum dipelajari'}</div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-gray-600 group-hover:text-white"></i>
+                        </div>
+                    `).join('');
+                    document.getElementById('learn-module-container').innerHTML = listHtml;
+                }
+                else if (view === 'lab') app.renderTemplate('tpl-lab');
+                else if (view === 'quest') quest.renderMap();
+                else if (view === 'mistakes') {
+                    app.renderTemplate('tpl-mistakes');
+                    const container = document.getElementById('mistakes-list');
+                    if (state.mistakes.length === 0) {
+                        container.innerHTML = `<div class="text-center text-gray-500 text-sm mt-12 bg-dark p-6 rounded-2xl border border-slate-700/50"><i class="fa-solid fa-check-circle text-5xl mb-4 opacity-50 block text-green-500"></i><p class="font-bold text-white mb-1">Sistem Bersih!</p>Belum ada kesalahan algoritma yang tercatat.<br>Teruskan akurasi 100%-mu!</div>`;
+                    } else {
+                        const recent = [...state.mistakes].reverse().slice(0, 15); // Show last 15
+                        container.innerHTML = recent.map(m => `
+                            <div class="bg-card p-4 rounded-xl border border-red-900/40 border-l-4 border-l-red-500 relative overflow-hidden">
+                                <div class="absolute -right-4 -top-4 opacity-5"><i class="fa-solid fa-bug text-6xl"></i></div>
+                                <div class="text-[10px] text-gray-400 mb-1.5 font-bold tracking-wider uppercase"><i class="fa-solid fa-location-crosshairs mr-1 text-red-500"></i> Quest Level ${m.lvl} - ${m.type}</div>
+                                <div class="font-mono text-sm mb-3 text-white bg-dark p-2 rounded border border-slate-700/50">${m.q}</div>
+                                <div class="grid grid-cols-2 gap-2 text-xs mb-3 font-mono">
+                                    <div class="bg-red-900/30 p-2.5 rounded-lg border border-red-900/50 text-red-400 break-all flex flex-col justify-between h-full">
+                                        <span class="text-[9px] text-red-500 mb-1">INPUTMU:</span>
+                                        <span><b>${m.userAns}</b> <i class="fa-solid fa-xmark float-right mt-0.5"></i></span>
+                                    </div>
+                                    <div class="bg-green-900/30 p-2.5 rounded-lg border border-green-900/50 text-green-400 break-all flex flex-col justify-between h-full">
+                                        <span class="text-[9px] text-green-500 mb-1">SEHARUSNYA:</span>
+                                        <span><b>${m.correctAns}</b> <i class="fa-solid fa-check float-right mt-0.5"></i></span>
+                                    </div>
+                                </div>
+                                <button onclick="app.navigate('lab')" class="w-full py-2.5 bg-slate-800 rounded-lg text-xs font-bold text-white hover:bg-slate-700 transition active:scale-[0.98]"><i class="fa-solid fa-flask mr-1 text-warning"></i> Pelajari di Lab Konversi</button>
+                            </div>
+                        `).join('');
+                    }
+                }
+                else if (view === 'leaderboard') {
+                    app.renderTemplate('tpl-leaderboard');
+                    app.renderLeaderboard();
+                }
+            },
+            
+            // --- STREAMING_CHUNK: Leaderboard Logic ---
+            renderLeaderboard: () => {
+                const filter = document.getElementById('lb-filter') ? document.getElementById('lb-filter').value : 'all';
+                let data = [...MOCK_LEADERBOARD];
+                
+                const userEntry = { name: state.user.name + " (Kamu)", class: state.user.class, xp: state.user.xp, isUser: true };
+                data.push(userEntry);
+                
+                if (filter !== 'all') {
+                    data = data.filter(d => d.class === filter || (filter === 'other' && !['7','8','9'].includes(d.class)));
+                }
+                data.sort((a, b) => b.xp - a.xp);
+                
+                const top3El = document.getElementById('lb-top3');
+                if (top3El && data.length >= 3) {
+                    top3El.innerHTML = `
+                        <div class="flex flex-col items-center w-1/3 opacity-90 relative top-3">
+                            <div class="text-3xl mb-2 drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">🥈</div>
+                            <div class="bg-gradient-to-t from-slate-400/20 to-card w-full rounded-t-xl border-t-4 border-slate-400 p-2 text-center h-20 flex flex-col justify-end pb-3 shadow-[0_-5px_15px_rgba(148,163,184,0.2)]">
+                                <div class="text-[10px] font-black truncate w-full px-1 ${data[1].isUser ? 'text-warning' : 'text-white'}">${data[1].name}</div>
+                                <div class="text-[10px] text-slate-300 font-mono mt-0.5">${data[1].xp} XP</div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-center w-1/3 z-10">
+                            <div class="text-5xl mb-2 drop-shadow-[0_0_15px_rgba(234,179,8,0.6)] animate-pulse">👑</div>
+                            <div class="bg-gradient-to-t from-warning/20 to-card w-full rounded-t-xl border-t-4 border-warning p-2 text-center h-28 flex flex-col justify-start pt-4 shadow-[0_-5px_20px_rgba(234,179,8,0.3)]">
+                                <div class="text-xs font-black truncate w-full px-1 ${data[0].isUser ? 'text-warning' : 'text-white'}">${data[0].name}</div>
+                                <div class="text-[11px] text-warning font-mono font-bold mt-1 bg-dark/50 rounded-full py-0.5">${data[0].xp} XP</div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-center w-1/3 opacity-90 relative top-6">
+                            <div class="text-2xl mb-2 drop-shadow-[0_0_8px_rgba(217,119,6,0.4)]">🥉</div>
+                            <div class="bg-gradient-to-t from-orange-700/20 to-card w-full rounded-t-xl border-t-4 border-orange-700 p-2 text-center h-16 flex flex-col justify-end pb-2 shadow-[0_-5px_15px_rgba(194,65,12,0.2)]">
+                                <div class="text-[10px] font-black truncate w-full px-1 ${data[2].isUser ? 'text-warning' : 'text-white'}">${data[2].name}</div>
+                                <div class="text-[9px] text-orange-300 font-mono mt-0.5">${data[2].xp} XP</div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                const listEl = document.getElementById('lb-list');
+                if (listEl) {
+                    let listHtml = '';
+                    const startIndex = data.length >= 3 ? 3 : 0;
+                    for(let i = startIndex; i < data.length; i++) {
+                        const d = data[i];
+                        listHtml += `
+                            <div class="flex items-center gap-3 bg-card p-3 rounded-xl border transition ${d.isUser ? 'border-warning shadow-[0_0_15px_rgba(234,179,8,0.2)] bg-warning/5 transform scale-[1.02]' : 'border-slate-700 hover:border-slate-500'}">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black ${d.isUser ? 'bg-warning text-dark' : 'bg-dark border border-slate-600 text-gray-400'}">${i+1}</div>
+                                <div class="flex-1 overflow-hidden">
+                                    <div class="text-sm font-bold truncate ${d.isUser ? 'text-warning' : 'text-white'}">${d.name}</div>
+                                    <div class="text-[10px] text-gray-400 mt-0.5">Kelas ${d.class === 'other' ? 'Lainnya' : d.class}</div>
+                                </div>
+                                <div class="text-xs font-mono font-black text-byte bg-dark px-2 py-1 rounded border border-slate-600 whitespace-nowrap shadow-inner">${d.xp} XP</div>
+                            </div>
+                        `;
+                    }
+                    listEl.innerHTML = listHtml;
+                }
+            },
+            
+            showLabHelp: () => {
+                ui.showByte("<b>Fungsi Lab Konversi:</b><br><br>Ketik angka di kotak manapun (Biner/Desimal/Hex), dan sistem akan mengisi sisanya secara otomatis. Klik tombol <b class='text-warning'>'Jelaskan Caranya'</b> untuk melihat proses matematika tahap demi tahap.");
+            }
+        };
+
+        // --- STREAMING_CHUNK: Building Learn Engine ---
+        const learnEngine = {
+            activeMod: null,
+            openModule: (id) => {
+                const m = LEARN_MODULES.find(x => x.id === id);
+                if(!m) return;
+                learnEngine.activeMod = m;
+                app.renderTemplate('tpl-learn-detail');
+                
+                document.getElementById('learn-d-title').innerText = m.title;
+                document.getElementById('learn-d-content').innerHTML = `
+                    <div class="mb-6 leading-relaxed">${m.content}</div>
+                    
+                    <div class="bg-card p-6 rounded-2xl border-2 border-slate-600 shadow-[0_0_20px_rgba(0,0,0,0.5)] relative mt-10">
+                        <div class="absolute -top-3 left-6 bg-warning text-dark text-[10px] font-black px-3 py-1 rounded-full uppercase shadow-lg tracking-widest"><i class="fa-solid fa-bolt mr-1"></i> Quick Check</div>
+                        <p class="text-sm font-bold mb-4 mt-2 text-white leading-relaxed">${m.quiz.q}</p>
+                        <div class="space-y-3">
+                            ${m.quiz.options.map((opt, i) => `
+                                <button onclick="learnEngine.checkQuiz(${i})" class="w-full text-left p-4 rounded-xl border border-slate-600 bg-dark hover:border-byte hover:bg-slate-800 transition font-mono text-sm shadow-md active:scale-[0.98] flex items-center justify-between group">
+                                    <span>${opt}</span>
+                                    <i class="fa-solid fa-circle-check text-byte opacity-0 group-hover:opacity-100 transition"></i>
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            },
+            checkQuiz: (selectedIndex) => {
+                const m = learnEngine.activeMod;
+                if(selectedIndex === m.quiz.answer) {
+                    if(!state.user.completedModules.includes(m.id)) {
+                        state.user.completedModules.push(m.id);
+                        state.user.xp += 50;
+                        storage.save();
+                    }
+                    ui.showModal(
+                        '<div class="flex items-center text-green-400"><i class="fa-solid fa-circle-check text-3xl mr-3"></i> TEPAT SEKALI!</div>', 
+                        `<div class="text-sm text-gray-200 mb-4 bg-dark p-4 rounded-xl border border-green-900/50 leading-relaxed">${m.quiz.exp}</div>`,
+                        `<button onclick="ui.closeModal(); app.navigate('learn')" class="w-full py-4 bg-green-600 text-white font-black rounded-xl hover:bg-green-500 transition shadow-[0_0_15px_rgba(34,197,94,0.3)]">+50 XP | Kembali ke Akademi</button>`
+                    );
+                } else {
+                    ui.showByte(`<b>Belum tepat!</b><br><br><span class="text-gray-300 block bg-dark p-3 rounded mt-2 border border-slate-700">${m.quiz.exp}</span><br>Coba ingat triknya dan ulangi.`, 
+                    `<button onclick="ui.closeByte()" class="w-full py-3 bg-slate-700 text-white font-bold rounded-xl hover:bg-slate-600 transition">Coba Lagi</button>`);
+                }
+            }
+        };
+
+        // --- STREAMING_CHUNK: Building lab and converter engines ---
+        const lab = {
+            lastInput: '',
+            lastType: '',
+            
+            onInput: (type) => {
+                const val = document.getElementById(`lab-${type}`).value;
+                lab.lastInput = val;
+                lab.lastType = type;
+                
+                let dec = 0;
+                try {
+                    if (val === '') {
+                        lab.clear(); return;
+                    }
+                    if (type === 'bin') {
+                        if (!/^[01]+$/.test(val)) return;
+                        dec = parseInt(val, 2);
+                    } else if (type === 'dec') {
+                        dec = parseInt(val, 10);
+                    } else if (type === 'hex') {
+                        if (!/^[0-9A-Fa-f]+$/.test(val)) return;
+                        dec = parseInt(val, 16);
+                    }
+                    
+                    if(isNaN(dec)) return;
+
+                    if (type !== 'bin') document.getElementById('lab-bin').value = dec.toString(2);
+                    if (type !== 'dec') document.getElementById('lab-dec').value = dec.toString(10);
+                    if (type !== 'hex') document.getElementById('lab-hex').value = dec.toString(16).toUpperCase();
+                } catch(e) {}
+            },
+            
+            clear: () => {
+                document.getElementById('lab-bin').value = '';
+                document.getElementById('lab-dec').value = '';
+                document.getElementById('lab-hex').value = '';
+                document.getElementById('lab-explanation').innerHTML = '';
+                document.getElementById('lab-explanation').classList.add('hidden');
+            },
+            
+            explain: () => {
+                if(!lab.lastInput) {
+                    ui.showByte("Masukkan angka terlebih dahulu di salah satu kotak (Biner, Desimal, atau Hex) sebelum meminta penjelasan.");
+                    return;
+                }
+                
+                const container = document.getElementById('lab-explanation');
+                container.classList.remove('hidden');
+                container.classList.add('flex');
+                
+                const binStr = document.getElementById('lab-bin').value;
+                const decStr = document.getElementById('lab-dec').value;
+                const hexStr = document.getElementById('lab-hex').value;
+                
+                let html = '';
+                
+                if (lab.lastType === 'bin') {
+                    html = `
+                        <div class="bg-dark p-5 rounded-2xl border border-bin text-sm mb-2 shadow-lg relative overflow-hidden">
+                            <div class="absolute right-0 top-0 opacity-10 text-6xl"><i class="fa-solid fa-hashtag"></i></div>
+                            <div class="font-bold text-bin mb-3 border-b border-slate-700 pb-2 flex items-center"><i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> Biner → Desimal (Tabel Ajaib)</div>
+                            <div class="text-xs text-gray-400 mb-3 font-medium">Tulis biner dari kanan ke kiri di bawah nilai kelipatan 2:</div>
+                            <div class="font-mono bg-card p-3 rounded-xl border border-slate-700 overflow-x-auto whitespace-nowrap mb-3 shadow-inner">
+                                ${binStr.split('').reverse().map((b, i) => `<span class="inline-block text-center mx-2"><div class="text-[10px] text-gray-500 mb-1 border-b border-slate-600">${Math.pow(2,i)}</div><div class="text-lg font-black ${b==='1'?'text-warning drop-shadow-[0_0_5px_rgba(234,179,8,0.5)]':'text-gray-600'}">${b}</div></span>`).reverse().join('')}
+                            </div>
+                            <div class="text-xs bg-slate-800 p-3 rounded-xl border border-slate-600">Jumlahkan nilai atas yang punya angka 1 di bawahnya:<br>
+                            <span class="font-mono font-bold text-white mt-1 block">${binStr.split('').reverse().map((b, i) => b === '1' ? Math.pow(2,i) : 0).filter(v => v>0).reverse().join(' + ')} = <b class="text-dec text-base">${decStr}</b></span></div>
+                        </div>
+                        <div class="bg-dark p-5 rounded-2xl border border-hex text-sm shadow-lg relative overflow-hidden">
+                            <div class="absolute right-0 top-0 opacity-10 text-6xl"><i class="fa-solid fa-barcode"></i></div>
+                            <div class="font-bold text-hex mb-3 border-b border-slate-700 pb-2 flex items-center"><i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> Biner → Hex (Trik 4 Bit)</div>
+                            <div class="text-xs text-gray-400 mb-3 font-medium">Pecah biner menjadi kelompok 4 angka dari kanan:</div>
+                            <div class="font-mono bg-card p-3 rounded-xl border border-slate-700 mb-3 break-all text-center flex justify-center flex-wrap gap-2 shadow-inner">
+                                ${binStr.padStart(Math.ceil(binStr.length / 4) * 4, '0').match(/.{1,4}/g).map(g => `<span class="inline-block px-3 py-1 bg-slate-800 rounded-lg border border-slate-600 text-bin font-black tracking-widest">${g}</span>`).join('')}
+                            </div>
+                            <div class="text-xs bg-slate-800 p-3 rounded-xl border border-slate-600">Ubah tiap kelompok 4-bit ke Hex (pakai 8-4-2-1): <br><b class="font-mono text-hex text-lg mt-1 block tracking-widest">${hexStr}</b></div>
+                        </div>
+                    `;
+                } else if (lab.lastType === 'dec') {
+                    let d = parseInt(decStr);
+                    
+                    // Dec to Bin steps (Division method for simplicity)
+                    let steps = [];
+                    let tempD = d;
+                    if(tempD === 0) steps.push(`<li class="flex justify-between py-1"><span>0 ÷ 2 = 0</span> <span class="text-bin font-bold bg-slate-800 px-2 rounded">sisa 0</span></li>`);
+                    while(tempD > 0) {
+                        let rem = tempD % 2;
+                        let div = Math.floor(tempD / 2);
+                        steps.push(`<li class="flex justify-between py-1.5 border-b border-slate-700/50 last:border-0"><span>${tempD} ÷ 2 = <b>${div}</b></span> <span class="text-bin font-bold bg-slate-800 px-2 rounded">sisa ${rem}</span></li>`);
+                        tempD = div;
+                    }
+
+                    // Dec to Hex steps
+                    let hSteps = [];
+                    let hNum = parseInt(decStr);
+                    if(hNum === 0) hSteps.push(`<li class="flex justify-between py-1"><span>0 ÷ 16 = 0</span> <span class="text-hex font-bold bg-slate-800 px-2 rounded">sisa 0</span></li>`);
+                    while(hNum > 0) {
+                        let rem = hNum % 16;
+                        let div = Math.floor(hNum / 16);
+                        let hexChar = rem.toString(16).toUpperCase();
+                        hSteps.push(`<li class="flex justify-between py-1.5 border-b border-slate-700/50 last:border-0"><span>${hNum} ÷ 16 = <b>${div}</b></span> <span class="text-hex font-bold bg-slate-800 px-2 rounded">sisa ${rem} ${rem>9? `(${hexChar})`:''}</span></li>`);
+                        hNum = div;
+                    }
+
+                    html = `
+                        <div class="bg-dark p-5 rounded-2xl border border-bin text-sm mb-2 shadow-lg relative overflow-hidden">
+                            <div class="absolute right-0 top-0 opacity-10 text-6xl"><i class="fa-solid fa-microchip"></i></div>
+                            <div class="font-bold text-bin mb-3 border-b border-slate-700 pb-2 flex items-center"><i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> Desimal → Biner (Bagi 2)</div>
+                            <ul class="font-mono bg-card p-3 rounded-xl border border-slate-700 mb-3 max-h-40 overflow-y-auto shadow-inner text-xs">
+                                ${steps.join('')}
+                            </ul>
+                            <div class="text-xs bg-slate-800 p-3 rounded-xl border border-slate-600">Baca sisa dari BAWAH ke ATAS:<br> <b class="font-mono text-bin text-lg tracking-widest mt-1 block">${binStr}</b></div>
+                        </div>
+                        <div class="bg-dark p-5 rounded-2xl border border-hex text-sm shadow-lg relative overflow-hidden">
+                            <div class="absolute right-0 top-0 opacity-10 text-6xl"><i class="fa-solid fa-barcode"></i></div>
+                            <div class="font-bold text-hex mb-3 border-b border-slate-700 pb-2 flex items-center"><i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> Desimal → Hex (Bagi 16)</div>
+                            <ul class="font-mono bg-card p-3 rounded-xl border border-slate-700 mb-3 space-y-1 text-xs shadow-inner">
+                                ${hSteps.join('')}
+                            </ul>
+                            <div class="text-xs bg-slate-800 p-3 rounded-xl border border-slate-600">Baca sisa dari BAWAH ke ATAS:<br> <b class="font-mono text-hex text-lg tracking-widest mt-1 block">${hexStr}</b></div>
+                        </div>
+                    `;
+                } else if (lab.lastType === 'hex') {
+                    // Hex to Dec steps
+                    let dSteps = [];
+                    let hArr = hexStr.split('').reverse();
+                    hArr.forEach((char, i) => {
+                        let val = parseInt(char, 16);
+                        let mult = Math.pow(16, i);
+                        dSteps.push(`<li class="flex justify-between py-1.5 border-b border-slate-700/50 last:border-0"><span>Digit ${char} (${val}) &times; ${mult}</span> <b class="text-dec">${val * mult}</b></li>`);
+                    });
+
+                    // Hex to Bin steps
+                    let bSteps = [];
+                    hexStr.split('').forEach(char => {
+                        let b = parseInt(char, 16).toString(2).padStart(4, '0');
+                        bSteps.push(`<span class="inline-block text-center m-1"><div class="font-bold text-hex mb-1 border-b border-slate-600 text-lg">${char}</div><div class="bg-slate-800 border border-slate-600 rounded-lg px-2 py-1 text-bin font-black tracking-widest">${b}</div></span>`);
+                    });
+
+                    html = `
+                        <div class="bg-dark p-5 rounded-2xl border border-dec text-sm mb-2 shadow-lg relative overflow-hidden">
+                            <div class="absolute right-0 top-0 opacity-10 text-6xl"><i class="fa-solid fa-hashtag"></i></div>
+                            <div class="font-bold text-dec mb-3 border-b border-slate-700 pb-2 flex items-center"><i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> Hex → Desimal (Nilai Tempat 16)</div>
+                            <div class="text-xs text-gray-400 mb-3 font-medium">Kalikan tiap digit dari kanan dengan 1, 16, 256...:</div>
+                            <ul class="font-mono bg-card p-3 rounded-xl border border-slate-700 mb-3 space-y-1 text-xs shadow-inner">
+                                ${dSteps.join('')}
+                            </ul>
+                            <div class="text-xs bg-slate-800 p-3 rounded-xl border border-slate-600">Total penjumlahan = <b class="font-mono text-dec text-lg block mt-1">${decStr}</b></div>
+                        </div>
+                        <div class="bg-dark p-5 rounded-2xl border border-bin text-sm shadow-lg relative overflow-hidden">
+                            <div class="absolute right-0 top-0 opacity-10 text-6xl"><i class="fa-solid fa-microchip"></i></div>
+                            <div class="font-bold text-bin mb-3 border-b border-slate-700 pb-2 flex items-center"><i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> Hex → Biner (Pecah 4 Bit)</div>
+                            <div class="text-xs text-gray-400 mb-3 font-medium">Ubah setiap digit Hex menjadi 4-bit biner:</div>
+                            <div class="font-mono flex flex-wrap justify-center bg-card p-3 rounded-xl border border-slate-700 mb-3 gap-2 shadow-inner">
+                                ${bSteps.join('')}
+                            </div>
+                            <div class="text-xs bg-slate-800 p-3 rounded-xl border border-slate-600">Gabungkan hasilnya = <b class="font-mono text-bin text-lg tracking-widest block mt-1 break-all">${binStr}</b></div>
+                        </div>
+                    `;
+                }
+
+                container.innerHTML = html;
+                
+                // Add "Show Me Why" Button
+                container.innerHTML += `
+                    <button onclick="ui.showByte('<b>Kenapa beda basis?</b><br><br>Manusia punya 10 jari, jadi kita pakai 10 angka (Basis 10 / Desimal).<br><br>Komputer tidak punya jari! Ia cuma pakai saklar listrik ON (1) dan OFF (0). Ini disebut Basis 2 / Biner.<br><br>Lalu kenapa ada Heksadesimal (Basis 16)? Karena deretan biner itu panjaaaaang sekali! Programmer membuat Hex untuk meringkas 4 angka Biner menjadi 1 huruf/angka saja biar mudah dibaca manusia.')" class="mt-2 text-xs font-bold text-byte bg-byte/10 border border-byte/30 py-3 rounded-xl text-center w-full hover:bg-byte/20 transition flex items-center justify-center gap-2"><i class="fa-solid fa-lightbulb"></i> Kenapa sistem bilangannya berbeda? (Show me why)</button>
+                `;
+            }
+        };
+
+        // --- STREAMING_CHUNK: Finalizing quest and game loop ---
+        const quest = {
+            activeLevel: null,
+            bossHP: 10,
+            
+            renderMap: () => {
+                app.renderTemplate('tpl-quest-map');
+                document.getElementById('qm-current').innerText = state.user.level;
+                
+                const container = document.getElementById('qm-nodes');
+                let mapHtml = '';
+                
+                QUEST_LEVELS.forEach((q, index) => {
+                    const isUnlocked = state.user.level >= q.id;
+                    const isCompleted = state.user.level > q.id;
+                    const isBoss = q.id === 25;
+                    
+                    let bg = isCompleted ? 'bg-byte shadow-[0_0_15px_rgba(14,165,233,0.5)]' : (isUnlocked ? 'bg-warning pulse-active' : 'bg-slate-800');
+                    let icon = isCompleted ? 'fa-check text-white' : (isBoss ? 'fa-skull text-white' : 'fa-lock text-gray-500');
+                    if(isUnlocked && !isCompleted && !isBoss) icon = 'fa-play text-dark';
+                    
+                    let align = index % 2 === 0 ? 'flex-row' : 'flex-row-reverse';
+                    
+                    mapHtml += `
+                        <div class="flex items-center justify-center gap-4 w-full ${align}">
+                            <div class="w-2/5 ${index % 2 === 0 ? 'text-right' : 'text-left'} bg-dark/50 p-2 rounded-xl border border-slate-700/50 backdrop-blur-sm">
+                                <div class="text-xs font-black ${isUnlocked ? 'text-white' : 'text-gray-600'} tracking-wide">${q.title}</div>
+                                <div class="text-[9px] font-mono text-gray-400 mt-0.5">Level ${q.id} ${isBoss?'(BOSS)':''}</div>
+                            </div>
+                            <button ${isUnlocked ? `onclick="quest.play(${q.id})"` : ''} class="w-14 h-14 rounded-full flex items-center justify-center border-4 border-darker shadow-xl text-xl z-10 ${bg} transition transform ${isUnlocked ? 'hover:scale-110 active:scale-95' : 'cursor-not-allowed'}">
+                                <i class="fa-solid ${icon}"></i>
+                            </button>
+                            <div class="w-2/5"></div>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = mapHtml;
+                
+                // Auto scroll
+                setTimeout(() => {
+                    const activeBtn = document.querySelector('.pulse-active');
+                    if(activeBtn) activeBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+            },
+            
+            play: (id) => {
+                const q = QUEST_LEVELS.find(x => x.id === id);
+                if(!q) return;
+                quest.activeLevel = q;
+                
+                app.renderTemplate('tpl-quest-play');
+                document.getElementById('qp-level-title').innerText = q.type === 'boss' ? 'FINAL BOSS' : `LEVEL ${q.id}`;
+                document.getElementById('qp-story').innerHTML = `<i class="fa-solid fa-quote-left text-byte/50 mr-1"></i> ${q.title} <i class="fa-solid fa-quote-right text-byte/50 ml-1"></i>`;
+                document.getElementById('qp-question').innerText = q.text;
+                
+                const interArea = document.getElementById('qp-interaction');
+                
+                if (q.type === 'boss') {
+                    quest.bossHP = 10;
+                    document.getElementById('qp-boss-bar').classList.remove('hidden');
+                    quest.renderBossQuestion();
+                    return;
+                }
+
+                // Render normal questions
+                if(q.type === 'mcq' || q.type === 'error') {
+                    interArea.innerHTML = `
+                        <div class="grid grid-cols-2 gap-3 mt-4">
+                            ${q.options.map(opt => `
+                                <button onclick="quest.checkAnswer('${opt}')" class="bg-dark border-2 border-slate-700 hover:border-byte hover:bg-slate-800 p-5 rounded-2xl font-mono text-lg font-black transition shadow-lg active:scale-95 text-white">${opt}</button>
+                            `).join('')}
+                        </div>
+                    `;
+                } else if (q.type === 'input') {
+                    interArea.innerHTML = `
+                        <div class="flex flex-col items-center gap-4 mt-4 w-full">
+                            <input type="text" id="qp-input" class="w-full bg-dark border-2 border-slate-600 rounded-2xl px-6 py-4 text-center text-3xl font-mono text-white focus:outline-none focus:border-byte focus:ring-4 focus:ring-byte/20 transition shadow-inner placeholder-slate-600" placeholder="Ketik jawaban..." autocomplete="off">
+                            <button onclick="quest.checkAnswer(document.getElementById('qp-input').value)" class="w-full bg-byte text-dark font-black py-4 rounded-2xl shadow-[0_0_15px_rgba(14,165,233,0.4)] hover:bg-sky-400 transition active:scale-[0.98] text-lg">KONFIRMASI <i class="fa-solid fa-paper-plane ml-2"></i></button>
+                        </div>
+                    `;
+                    // Auto focus input
+                    setTimeout(() => { document.getElementById('qp-input').focus(); }, 100);
+                }
+            },
+
+            renderBossQuestion: () => {
+                document.getElementById('qp-boss-hp-text').innerText = `${quest.bossHP}/10 HP`;
+                document.getElementById('qp-boss-hp-fill').style.width = `${(quest.bossHP/10)*100}%`;
+                
+                const r = Math.random();
+                let ans, text, type;
+                if(r < 0.33) { 
+                    let val = Math.floor(Math.random() * 15) + 1; 
+                    ans = val.toString();
+                    text = `Glitch! Konversi biner ${val.toString(2)} ke Desimal!`;
+                } else if (r < 0.66) { 
+                    let val = Math.floor(Math.random() * 15) + 1;
+                    ans = val.toString(16).toUpperCase();
+                    text = `Serangan masuk! Ubah Desimal ${val} ke Hex!`;
+                } else {
+                    let val = Math.floor(Math.random() * 15) + 1;
+                    ans = val.toString(2);
+                    text = `Awas! Hex ${val.toString(16).toUpperCase()} jadikan Biner!`;
+                }
+                
+                quest.activeLevel.ans = ans;
+                document.getElementById('qp-question').innerText = text;
+                
+                document.getElementById('qp-interaction').innerHTML = `
+                    <div class="flex flex-col items-center gap-4 mt-4">
+                        <input type="text" id="qp-input" class="w-full bg-dark border-2 border-red-900 rounded-2xl px-6 py-4 text-center text-3xl font-mono text-white focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/20 transition shadow-inner" placeholder="Tangkis serangan..." autocomplete="off">
+                        <button onclick="quest.checkAnswer(document.getElementById('qp-input').value.toUpperCase())" class="w-full bg-red-600 text-white font-black py-4 rounded-2xl shadow-[0_0_15px_rgba(220,38,38,0.5)] hover:bg-red-500 transition active:scale-[0.98] text-lg"><i class="fa-solid fa-bolt mr-2"></i> SERANG BALIK!</button>
+                    </div>
+                `;
+                setTimeout(() => { document.getElementById('qp-input').focus(); }, 100);
+            },
+            
+            checkAnswer: (ans) => {
+                const q = quest.activeLevel;
+                if (!ans) return;
+                
+                const isCorrect = ans.trim().toUpperCase() === q.ans.toUpperCase();
+                
+                if (isCorrect) {
+                    if (q.type === 'boss') {
+                        quest.bossHP--;
+                        ui.showModal(
+                            '<div class="text-warning animate-pulse"><i class="fa-solid fa-bolt text-3xl mr-2"></i> CRITICAL HIT!</div>', 
+                            `<div class="text-sm text-gray-200 bg-dark p-4 rounded-xl border border-warning/50">Serangan berhasil! HP Glitch berkurang.</div>`,
+                            `<div class="hidden"></div>` // Hide footer buttons
+                        );
+                        setTimeout(() => {
+                            ui.closeModal();
+                            if(quest.bossHP <= 0) quest.winLevel();
+                            else quest.renderBossQuestion();
+                        }, 1200);
+                        return;
+                    }
+                    
+                    quest.winLevel();
+                } else {
+                    // Wrong Answer
+                    state.mistakes.push({ lvl: q.id, type: q.type, q: q.text, userAns: ans, correctAns: q.ans });
+                    storage.save();
+                    
+                    if (q.type === 'boss') {
+                        ui.showModal(
+                            '<div class="text-red-500"><i class="fa-solid fa-triangle-exclamation text-3xl mr-2"></i> SYSTEM ERROR!</div>', 
+                            `<div class="text-red-400 font-bold mb-2">Serangan meleset!</div><div class="text-xs text-gray-300 bg-dark p-3 rounded-lg">Cepat ingat trik konversinya, Glitch menyerang balik!</div>`,
+                            `<div class="hidden"></div>`
+                        );
+                        document.getElementById('qp-boss-bar').classList.add('shake');
+                        setTimeout(() => { ui.closeModal(); document.getElementById('qp-boss-bar').classList.remove('shake'); }, 1500);
+                        return;
+                    }
+
+                    ui.showByte(`<b>Aduh, belum tepat!</b><br><br>Kamu menjawab <b class="text-red-400 font-mono">${ans}</b>, tapi itu salah.<br><br>Sistem mencatat algoritma ini di <i>Mistake Book</i>. Jangan menyerah, coba baca <b>Hint</b> (ikon lampu di kanan atas) lalu coba lagi.`, 
+                    `<div class="flex gap-2 w-full"><button onclick="ui.closeByte()" class="flex-1 py-3 bg-slate-700 text-white font-bold rounded-xl hover:bg-slate-600 transition">Coba Lagi</button><button onclick="ui.closeByte(); app.navigate('lab')" class="flex-1 py-3 bg-warning text-dark font-black rounded-xl shadow-lg">Buka Lab</button></div>`);
+                }
+            },
+            
+            winLevel: () => {
+                const q = quest.activeLevel;
+                if (state.user.level === q.id) {
+                    state.user.level++;
+                }
+                const xpGained = q.type === 'boss' ? 500 : 100;
+                state.user.xp += xpGained;
+                
+                // Update mastery randomly to simulate progress
+                state.user.mastery.bin2dec = Math.min(100, state.user.mastery.bin2dec + 4);
+                state.user.mastery.bin2hex = Math.min(100, state.user.mastery.bin2hex + 2);
+                state.user.mastery.dec2hex = Math.min(100, state.user.mastery.dec2hex + 3);
+                
+                storage.save();
+
+                if (q.type === 'boss') {
+                    ui.showModal(
+                        '<div class="text-byte font-black tracking-widest"><i class="fa-solid fa-globe"></i> CORE-X RESTORED!</div>', 
+                        `
+                        <div class="text-center">
+                            <div class="text-6xl mb-4 animate-bounce mt-4 drop-shadow-[0_0_20px_rgba(234,179,8,0.6)]">🏆</div>
+                            <div class="text-sm text-gray-200 mb-4 font-mono leading-relaxed bg-dark/80 p-4 rounded-xl border border-byte/50 shadow-inner">Sistem berhasil dipulihkan secara penuh!<br><br>Kamu telah menyelesaikan misi utama dan dianugerahi gelar <b>NUMBER MASTER</b>.</div>
+                            <div class="text-warning font-black mt-2 text-3xl drop-shadow-[0_0_15px_rgba(234,179,8,0.5)] bg-warning/10 inline-block px-6 py-2 rounded-full border border-warning/30">+${xpGained} XP</div>
+                        </div>
+                        `,
+                        `<button onclick="ui.closeModal(); app.navigate('leaderboard'); ui.showByte('<b>Luar Biasa, Master!</b><br><br>CORE-X kembali normal berkat bantuanmu. Mari kita lihat posisi peringkat globalmu di Leaderboard!');" class="w-full py-4 bg-byte text-dark font-black rounded-xl hover:bg-sky-400 transition shadow-[0_0_15px_rgba(14,165,233,0.4)] text-lg">Lihat Leaderboard <i class="fa-solid fa-arrow-right ml-2"></i></button>`
+                    );
+                } else {
+                    ui.showModal(
+                        '<div class="text-green-400 font-black"><i class="fa-solid fa-unlock-keyhole mr-2"></i> LEVEL CLEARED</div>', 
+                        `<div class="flex flex-col items-center justify-center py-4"><div class="text-5xl mb-4 text-warning drop-shadow-[0_0_15px_rgba(234,179,8,0.4)]">⚡</div><div class="text-warning font-black text-2xl bg-dark px-6 py-2 rounded-full border border-slate-700 shadow-inner">+${xpGained} XP</div></div>`,
+                        `<button onclick="ui.closeModal(); app.navigate('quest');" class="w-full py-4 bg-green-600 text-white font-black rounded-xl hover:bg-green-500 transition shadow-[0_0_15px_rgba(34,197,94,0.3)] text-lg">Lanjut <i class="fa-solid fa-forward ml-2"></i></button>`
+                    );
+                }
+            },
+            
+            reqHint: () => {
+                const h = quest.activeLevel.hint || "Ingat kembali materi di Akademi Digital.";
+                ui.showByte(`<b>Petunjuk BYTE:</b><br><br><span class="text-white block bg-dark p-3 rounded-lg border border-slate-700/50 mt-2 text-sm leading-relaxed">${h}</span>`, `
+                    <div class="flex gap-2">
+                        <button onclick="ui.closeByte()" class="flex-1 py-3 bg-slate-700 text-white rounded-xl text-sm font-bold transition hover:bg-slate-600">Tutup Hint</button>
+                        <button onclick="ui.closeByte(); app.navigate('lab')" class="flex-1 py-3 bg-warning text-dark rounded-xl text-sm font-black transition shadow-lg hover:bg-yellow-400"><i class="fa-solid fa-flask mr-1"></i> Buka Lab</button>
+                    </div>
+                `);
+            }
+        };
+
+        // --- Init ---
+        window.onload = app.init;
+    </script>
+</body>
+</html>
