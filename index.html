@@ -154,23 +154,37 @@
                 <div class="w-24 h-24 bg-card rounded-full mx-auto mb-6 flex items-center justify-center border-4 border-slate-700 shadow-xl animate-float">
                     <i class="fa-solid fa-bolt text-4xl text-warning"></i>
                 </div>
-                <h1 class="text-3xl font-black mb-1 neon-text bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-green-400 to-purple-400">CORE-X QUEST</h1>
+                <h1 class="text-3xl font-black mb-1 neon-text bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-green-400 to-purple-400">BILANGAN BINER</h1>
                 <p class="text-xs text-gray-400 mb-8 font-mono">Platform Pembelajaran Konversi Bilangan</p>
                 
                 <div class="bg-card p-6 rounded-2xl border border-slate-700 shadow-xl text-left">
-                    <h2 class="text-lg font-bold mb-4">Registrasi Agen</h2>
+                    <h2 class="text-lg font-bold mb-4">Registrasi Peserta Didik</h2>
                     <div class="mb-4">
-                        <label class="block text-[10px] text-gray-400 font-bold mb-1 uppercase tracking-wider">Nama Agen</label>
+                        <label class="block text-[10px] text-gray-400 font-bold mb-1 uppercase tracking-wider">Nama Siswa</label>
                         <input type="text" id="reg-name" placeholder="Contoh: Alex" class="w-full bg-dark border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-byte focus:ring-1 focus:ring-byte transition">
                     </div>
                     <div class="mb-6">
                         <label class="block text-[10px] text-gray-400 font-bold mb-1 uppercase tracking-wider">Kelas</label>
                         <select id="reg-class" class="w-full bg-dark border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-byte transition appearance-none">
-                            <option value="">Pilih Kelas</option>
-                            <option value="7">Kelas 7</option>
-                            <option value="8">Kelas 8</option>
-                            <option value="9">Kelas 9</option>
-                            <option value="other">Lainnya</option>
+                        <option value="" disabled selected>Pilih Kelas ▼</option>
+                        <option value="7A">Kelas 7A</option>
+                        <option value="7B">Kelas 7B</option>
+                        <option value="7C">Kelas 7C</option>
+                        <option value="7D">Kelas 7D</option>
+                        <option value="8A">Kelas 8A</option>
+                        <option value="8B">Kelas 8B</option>
+                        <option value="8C">Kelas 8C</option>
+                        <option value="8D">Kelas 8D</option>
+                        <option value="8E">Kelas 8E</option>
+                        <option value="8F">Kelas 8F</option>
+                        <option value="8G">Kelas 8G</option>
+                        <option value="8H">Kelas 8H</option>
+                        <option value="8I">Kelas 8I</option>
+                        <option value="8J">Kelas 8J</option>
+                        <option value="8K">Kelas 8K</option>
+                        <option value="8L">Kelas 8L</option>
+                        <option value="8N">Kelas 8M</option>
+                        <option value="8N">Kelas 8N</option>
                         </select>
                     </div>
                     <button onclick="app.completeOnboarding()" class="w-full bg-byte text-dark font-black py-4 rounded-xl hover:bg-sky-400 transition flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(14,165,233,0.4)]">
